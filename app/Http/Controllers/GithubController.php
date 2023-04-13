@@ -18,24 +18,27 @@ class GithubController extends Controller
 	public function callback()
 	{
 		$githubUser = Socialite::driver('github')->stateless()->user();
-		ray($githubUser);
 
-		$hashed_random_password = Hash::make(Str::random(8));
+		// Find or craet user
+		$user = User::where('github_id','=',$githubUser->id)->first();
+		if ( empty( $user ) )
+		{
 
-		$data = [
-        'name' => $githubUser->name,
-        'email' => $githubUser->email,
-		'password' => $hashed_random_password,
-		'auth_type' => 'github',
-		'nickname' => $githubUser->nickname,
-		'github_id' => $githubUser->id,
-		];
-		ray($data);
+			$hashed_random_password = Hash::make(Str::random(8));
 
-		$user = User::updateOrCreate($data);
- 
-    Auth::login($user);
- 
-    return redirect('/dashboard');
+			$data = [
+				'name' => $githubUser->name,
+				'email' => $githubUser->email,
+				'password' => $hashed_random_password,
+				'auth_type' => 'github',
+				'nickname' => $githubUser->nickname,
+				'github_id' => $githubUser->id,
+			];
+
+			$user = User::updateOrCreate($data);
+		}
+
+		Auth::login($user);
+		return redirect('/dashboard');
 	}
 }

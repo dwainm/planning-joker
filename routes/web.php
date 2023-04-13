@@ -46,8 +46,11 @@ Route::get('/auth/github', [GithubController::class, 'redirect'])->name('github.
 Route::get('/auth/github/callback', [GithubController::class, 'callback']);
 
 Route::get('/', function () {
-		ray(Auth::user());
-		$name = "dwainm";
+		if ( ! Auth::check() )
+		{
+			return redirect('/dashboard');
+		}
+		$name = Auth::user();
 
 		$query = [
 		'query' => 'query ($username: String!){
