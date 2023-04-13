@@ -25,6 +25,7 @@ class User extends Authenticatable
 		'nickname',
 		'auth_type',
     ];
+
     /**
      * The attributes that should be hidden for serialization.
      *
