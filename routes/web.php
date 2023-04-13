@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,6 +46,7 @@ Route::get('/auth/github', [GithubController::class, 'redirect'])->name('github.
 Route::get('/auth/github/callback', [GithubController::class, 'callback']);
 
 Route::get('/', function () {
+		ray(Auth::user());
 		$name = "dwainm";
 
 		$query = [

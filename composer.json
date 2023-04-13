@@ -14,6 +14,7 @@
         "laravel/telescope": "^4.14",
         "laravel/tinker": "^2.8",
         "livewire/livewire": "^2.12",
+        "protoqol/prequel": "*",
         "spatie/laravel-ray": "^1.32"
     },
     "require-dev": {
