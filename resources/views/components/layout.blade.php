@@ -8,6 +8,7 @@
 
         <!-- Styles -->
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+		@livewireStyles
     </head>
 		<body>
 		<header class="container">
@@ -16,5 +17,6 @@
 		<main class="container">
 			{{ $slot }}
 		</main>
+		@livewireScripts
 	</body>
 </html>
