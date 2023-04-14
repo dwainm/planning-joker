@@ -18,6 +18,7 @@ class ProfileController extends Controller
     {
         return view('profile.edit', [
             'user' => $request->user(),
+			'project_fields'=> get_project_number_fields(),
         ]);
     }
 

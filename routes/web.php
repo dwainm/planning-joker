@@ -24,25 +24,63 @@ Route::get('/', function () {
 Route::get('/project/{id}', function ($id) {
 		$issues = get_project_issues($id);
 
+ray( 'GET' );
 		return view('project',
 				[
 				'title'=>'Project',
+				'id'  => $id,
 				'issues'=> $issues,
 				]);
 });
 
+Route::post('/project/{id}', function ($id){
+	$field_id = "PVTF_lAHOABolQs2J4s4CTh_w"; // temporary harcoded untill settings is implemented where w
+	update_estimate_values($id,$field_id, $_POST['estimate']??[]);
+	return redirect('/project/'. $id );
+
+});
+
+function update_estimate_values( $project_id, $field_id, $new_values ) {
+	$counter = 0;
+	$updates = '';
+	foreach( $new_values as $issue_id => $new_value )
+	{
+		$counter++;
+		$updates .= sprintf('
+		update%s: updateProjectV2ItemFieldValue(
+					input: {
+						projectId: "%s"
+				itemId: "%s"
+				fieldId: "%s"
+				value: { 
+				number: %d        
+				}
+				}
+				) {
+				projectV2Item {
+					id
+				 }
+				}
+
+		', $counter, $project_id, $issue_id, $field_id, $new_value);
+	}
+	$query = ['query' => sprintf('mutation {%s } ',$updates)];
+	$response = gh_graphql_query($query);
+
+	if( ! isset( $response->data)) {
+		abort(400);
+	}
+}
 
 /** Auth Routes */
 Route::get('/auth/github', [GithubController::class, 'redirect'])->name('github.login');
 Route::get('/auth/github/callback', [GithubController::class, 'callback']);
 
 Route::get('/dashboard', function () {
-
-		$projects = get_projects();
 		return view('dashboard',
 				[
 				'title'=>'Welcome',
-				'projects'=> $projects,
+				'projects'=> get_projects(),
 				]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -68,6 +106,98 @@ function gh_query( $url, $body, $headers= []) {
 			  );
 
 	return json_decode($response);
+}
+
+function get_project_number_fields(){
+		$name = Auth::user()->nickname;
+
+		$query = [
+		'query' => 'query ($username: String!){
+		user(login: $username) {
+		projectsV2(first: 20) {
+		nodes {
+		id
+		title
+		}
+		}
+		}
+		}
+		' ,
+		'variables' => [
+		'username' => $name,
+		]
+		];
+
+		$response = gh_graphql_query($query);
+		if( ! isset( $response->data->user->projectsV2->nodes)) {
+			return [];
+		}
+		
+		$projects =  $response->data->user->projectsV2->nodes;
+		$fields = [];
+		
+		foreach ($projects as $project) {
+				$query = ['query' =>'
+				query apiGetAllFields($project_id: ID!) {
+					node(id: $project_id) {
+						... on ProjectV2 {
+							fields(first: 20) {
+								nodes {
+									... on ProjectV2Field {
+										id
+											name
+											dataType
+									}
+									... on ProjectV2IterationField {
+										id
+											name
+											configuration {
+												iterations {
+													startDate
+														id
+												}
+											}
+									}
+									... on ProjectV2SingleSelectField {
+										id
+											name
+											options {
+												id
+													name
+											}
+									}
+								}
+							}
+						}
+					}
+				}
+			' ,
+				'variables' => [
+					'project_id' => $project->id,
+				]
+					];
+
+			$response = gh_graphql_query($query);
+			$responsFields = isset( $response->data->node->fields->nodes) ?  $response->data->node->fields->nodes : [];
+
+			if( empty( $responsFields) ) {
+				continue;
+			}
+
+			foreach( $responsFields as $field )
+			{
+				if ( ! isset($field->dataType) || $field->dataType != "NUMBER" )
+				{
+					continue;
+				}
+
+				$fields[$project->id] = [];
+				$fields[$project->id]['project_title'] =  $project->title;	
+				$fields[$project->id]['id'] =  $field->id;	
+				$fields[$project->id]['name'] =  $field->name;	
+			}
+		}
+		return $fields;
 }
 
 function get_projects(){
@@ -127,6 +257,7 @@ function get_project_issues($id){
 issue_title: text
 				 field{
 					 ... on ProjectV2FieldCommon {
+						 id
 						 name
 					 }
 				 }
@@ -135,6 +266,7 @@ issue_title: text
 value_date: date
 				field{
 					... on ProjectV2FieldCommon {
+						id
 						name
 					}
 				}
@@ -143,6 +275,7 @@ value_date: date
 value_name: name
 				field{
 					... on ProjectV2FieldCommon {
+						id
 						name
 					}
 				}
@@ -151,6 +284,7 @@ value_name: name
 value_number: number
 				  field{
 					  ... on ProjectV2FieldCommon {
+						  id
 						  name
 					  }
 				  }
@@ -160,6 +294,7 @@ value_number: number
 value_iteration: title
 					 field{
 						 ... on ProjectV2FieldCommon {
+							 id
 							 name
 						 }
 					 }
@@ -186,8 +321,8 @@ value_iteration: title
 		$issue_id = $issue->id;
 		// Supply defaults as we expect to have on template.
 		$fields = [
-			"estimate" => 0,
-			"status" => "",
+			"estimate" => ["value"=>0, "id"=>"n/a"],
+			"status" => ["value"=>0, "id"=>"n/a"],
 		];
 
 		foreach ($issue->fieldValues->nodes as $field) {
@@ -200,11 +335,15 @@ value_iteration: title
 			}
 
 			if( property_exists( $field, 'value_number') ) {
-				$fields[strtolower($field->field->name)] = $field->value_number;
+				$fields[strtolower($field->field->name)]=[];
+				$fields[strtolower($field->field->name)]['value'] = $field->value_number;
+				$fields[strtolower($field->field->name)]['id'] = $field->field->id;
 			}
 
 			if( property_exists( $field, 'value_name') ) {
-				$fields[strtolower($field->field->name)] = $field->value_name;
+				$fields[strtolower($field->field->name)]=[];
+				$fields[strtolower($field->field->name)]['value'] = $field->value_name;
+				$fields[strtolower($field->field->name)]['id'] = $field->field->id;
 			}
 		}
 
