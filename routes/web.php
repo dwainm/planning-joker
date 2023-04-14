@@ -24,7 +24,6 @@ Route::get('/', function () {
 Route::get('/project/{id}', function ($id) {
 		$issues = get_project_issues($id);
 
-ray( 'GET' );
 		return view('project',
 				[
 				'title'=>'Project',
