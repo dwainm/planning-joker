@@ -4,7 +4,6 @@ use App\Http\Controllers\GithubController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 /*
@@ -18,8 +17,33 @@ use Illuminate\Support\Facades\Auth;
 |
 */
 
+Route::get('/', function () {
+		return redirect('/dashboard');
+});
+
+Route::get('/project/{id}', function ($id) {
+		$issues = get_project_issues($id);
+
+		return view('project',
+				[
+				'title'=>'Project',
+				'issues'=> $issues,
+				]);
+});
+
+
+/** Auth Routes */
+Route::get('/auth/github', [GithubController::class, 'redirect'])->name('github.login');
+Route::get('/auth/github/callback', [GithubController::class, 'callback']);
+
 Route::get('/dashboard', function () {
-    return view('dashboard');
+
+		$projects = get_projects();
+		return view('dashboard',
+				[
+				'title'=>'Welcome',
+				'projects'=> $projects,
+				]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -28,29 +52,26 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+/**
+ * Functions
+ */
+function gh_query( $url, $body, $headers= []) {
+	$token = Crypt::decryptString(Auth::user()->gh_token);
 
-function gh_graphql_query($query){
-	$response = Http::withToken(getenv("PLANNING_JOKER_GH_TOKEN"))
-	->withHeaders([
+	$response = Http::withToken($token)
+	->withHeaders(array_merge( $headers, [
 			'Content-Type' => 'application/json',
-	])
+	]))
 	->post(
-				'https://api.github.com/graphql',
-				$query
+				$url,
+				$body
 			  );
 
 	return json_decode($response);
 }
 
-Route::get('/auth/github', [GithubController::class, 'redirect'])->name('github.login');
-Route::get('/auth/github/callback', [GithubController::class, 'callback']);
-
-Route::get('/', function () {
-		if ( ! Auth::check() )
-		{
-			return redirect('/dashboard');
-		}
-		$name = Auth::user();
+function get_projects(){
+		$name = Auth::user()->nickname;
 
 		$query = [
 		'query' => 'query ($username: String!){
@@ -69,198 +90,135 @@ Route::get('/', function () {
 		]
 		];
 
-		$projects = gh_graphql_query($query)->data->user->projectsV2->nodes;
+		$response = gh_graphql_query($query);
+		if( ! isset( $response->data->user->projectsV2->nodes)) {
+			return [];
+		}
+		
+		return  $response->data->user->projectsV2->nodes;
+}
 
-		return view('welcome',
-				[
-				'title'=>'Welcome',
-				'projects'=> $projects,
-				]);
-});
+function gh_graphql_query($query){
+	return gh_query('https://api.github.com/graphql', $query );
+}
+
 
 function get_project_issues($id){
 
-/**
- * All custom fields are build on common field types.
- *
- * The query below you'll see we list all field types we desire as these
- * store the value in a unique field name. This is a really terrible API
- * design, but I guess you can't get the same value field name in
- * GraphQL if the types do not match.
- */
-$query = [
-'query' => 'query apiGetProjectIssues($project_id: ID!) {
-  node(id: $project_id) {
-    ... on ProjectV2 {
-      items(first: 100) {
-        nodes {
-          id
-          fieldValues(first: 100) {
-            nodes {
-              
-              ... on ProjectV2ItemFieldTextValue {
-                issue_title: text
-                                field{
-                  ... on ProjectV2FieldCommon {
-                        name
-                    }
-                }
-              }
-              ... on ProjectV2ItemFieldDateValue {
-                value_date: date
-                                field{
-                  ... on ProjectV2FieldCommon {
-                        name
-                    }
-                }
-              }
-              ... on ProjectV2ItemFieldSingleSelectValue{
-                value_name: name
-                                field{
-                  ... on ProjectV2FieldCommon {
-                        name
-                    }
-                }
-              }
-              ... on ProjectV2ItemFieldNumberValue{
-                value_number: number
-                field{
-                  ... on ProjectV2FieldCommon {
-                        name
-                    }
-                }
-              }
+	/**
+	 * All custom fields are build on common field types.
+	 *
+	 * The query below you'll see we list all field types we desire as these
+	 * store the value in a unique field name. This is a really terrible API
+	 * design, but I guess you can't get the same value field name in
+	 * GraphQL if the types do not match.
+	 */
+	$query = [
+		'query' => 'query apiGetProjectIssues($project_id: ID!) {
+			node(id: $project_id) {
+				... on ProjectV2 {
+					items(first: 100) {
+						nodes {
+							id
+								fieldValues(first: 100) {
+									nodes {
 
-                            ... on ProjectV2ItemFieldIterationValue {
-                value_iteration: title
-                                field{
-                  ... on ProjectV2FieldCommon {
-                        name
-                    }
-                }
-              }
-              }   
-            }
-          }
-        }
-      }
-    }
-  }	',
+										... on ProjectV2ItemFieldTextValue {
+issue_title: text
+				 field{
+					 ... on ProjectV2FieldCommon {
+						 name
+					 }
+				 }
+										}
+										... on ProjectV2ItemFieldDateValue {
+value_date: date
+				field{
+					... on ProjectV2FieldCommon {
+						name
+					}
+				}
+										}
+										... on ProjectV2ItemFieldSingleSelectValue{
+value_name: name
+				field{
+					... on ProjectV2FieldCommon {
+						name
+					}
+				}
+										}
+										... on ProjectV2ItemFieldNumberValue{
+value_number: number
+				  field{
+					  ... on ProjectV2FieldCommon {
+						  name
+					  }
+				  }
+										}
+
+										... on ProjectV2ItemFieldIterationValue {
+value_iteration: title
+					 field{
+						 ... on ProjectV2FieldCommon {
+							 name
+						 }
+					 }
+										}
+									}   
+								}
+						}
+					}
+				}
+			}
+		}	',
 		'variables' => [
-		'project_id' => $id,
+			'project_id' => $id,
 		]
-];
-$response = gh_graphql_query($query);
-$issues = $response->data->node->items->nodes;
+			];
+	$response = gh_graphql_query($query);
+	$issues = $response->data->node->items->nodes;
 
-// We need to convert the data into something that's easier to work with
-$simplified_issues = [];
+	// We need to convert the data into something that's easier to work with
+	$simplified_issues = [];
 
-$issue_title = '';
-foreach ($issues as $issue) {
-	$issue_id = $issue->id;
-	// Supply defaults as we expect to have on template.
-	$fields = [
-		"estimate" => 0,
-		"status" => "",
-	];
+	$issue_title = '';
+	foreach ($issues as $issue) {
+		$issue_id = $issue->id;
+		// Supply defaults as we expect to have on template.
+		$fields = [
+			"estimate" => 0,
+			"status" => "",
+		];
 
-	foreach ($issue->fieldValues->nodes as $field) {
-		if (count( (array)$field) == 0){
-			continue;
+		foreach ($issue->fieldValues->nodes as $field) {
+			if (count( (array)$field) == 0){
+				continue;
+			}
+
+			if( property_exists( $field, 'issue_title') ) {
+				$issue_title = $field->issue_title;
+			}
+
+			if( property_exists( $field, 'value_number') ) {
+				$fields[strtolower($field->field->name)] = $field->value_number;
+			}
+
+			if( property_exists( $field, 'value_name') ) {
+				$fields[strtolower($field->field->name)] = $field->value_name;
+			}
 		}
-	
-		Log::debug(print_r($field,true));
-		if( property_exists( $field, 'issue_title') ) {
-			$issue_title = $field->issue_title;
-		}
 
-		if( property_exists( $field, 'value_number') ) {
-			$fields[strtolower($field->field->name)] = $field->value_number;
-		}
-
-		if( property_exists( $field, 'value_name') ) {
-			$fields[strtolower($field->field->name)] = $field->value_name;
-		}
+		$simplified_issues[] = [
+			"id" => $issue_id,
+			"title" => $issue_title,
+			"fields"=> $fields,
+		];
 	}
-
-	$simplified_issues[] = [
-		"id" => $issue_id,
-		"title" => $issue_title,
-		"fields"=> $fields,
-	];
-}
 
 	return $simplified_issues;
 }
 
-Route::get('/project/{id}', function ($id) {
-		$issues = get_project_issues($id);
-
-		return view('project',
-				[
-				'title'=>'Project',
-				'issues'=> $issues,
-				]);
-});
-
-
-/*
-
-query apiGetProjectIssues( $project_id: ID!){
-    node(id:$project_id) {
-        ... on ProjectV2 {
-          items(first: 100) {
-            nodes{
-              id
-              fieldValues(first: 8) {
-                nodes{                
-                  ... on ProjectV2ItemFieldTextValue {
-                    text
-                    field {
-                      ... on ProjectV2FieldCommon {
-                        name
-                      }
-                    }
-                  }
-                  ... on ProjectV2ItemFieldDateValue {
-                    date
-                    field {
-                      ... on ProjectV2FieldCommon {
-                        name
-                      }
-                    }
-                  }
-                  ... on ProjectV2ItemFieldSingleSelectValue {
-                    name
-                    field {
-                      ... on ProjectV2FieldCommon {
-                        name
-                      }
-                    }
-                  }
-                }              
-              }
-              content{              
-                ... on DraftIssue {
-                  title
-                  body
-                }
-                ...on Issue {
-                  title
-                  assignees(first: 10) {
-                    nodes{
-                      login
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-}
-
+/**
 query apiGetAllFields{
   node(id: "PVT_kwHOABolQs2J4g") {
     ... on ProjectV2 {
@@ -293,6 +251,6 @@ query apiGetAllFields{
     }
 }
 }
- */
+*/
 
 require __DIR__.'/auth.php';

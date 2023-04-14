@@ -6,18 +6,23 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 
 class GithubController extends Controller
 {
     public  function redirect()
 	{
-		return Socialite::driver('github')->redirect();
+		return Socialite::driver('github')
+		->scopes(['project'])
+		->redirect();
 	}
 	
 	public function callback()
 	{
 		$githubUser = Socialite::driver('github')->stateless()->user();
+
+		ray( $githubUser );
 
 		// Find or craet user
 		$user = User::where('github_id','=',$githubUser->id)->first();
@@ -33,10 +38,18 @@ class GithubController extends Controller
 				'auth_type' => 'github',
 				'nickname' => $githubUser->nickname,
 				'github_id' => $githubUser->id,
+				'gh_token' => Crypt::encryptString($githubUser->token)
 			];
-
 			$user = User::updateOrCreate($data);
+		} else {
+			// update user with the latest data
+			$user->update([
+				'name' => $githubUser->name,
+				'email' => $githubUser->email,
+				'gh_token' => Crypt::encryptString($githubUser->token)
+			]);
 		}
+		ray( $user);
 
 		Auth::login($user);
 		return redirect('/dashboard');
