@@ -39,38 +39,40 @@ Route::post('/project/{id}', function ($id){
 
 });
 
-function update_estimate_values( $project_id, $field_id, $new_values ) {
-	$counter = 0;
-	$updates = '';
-	foreach( $new_values as $issue_id => $new_value )
-	{
-		$counter++;
-		$updates .= sprintf('
-		update%s: updateProjectV2ItemFieldValue(
-					input: {
-						projectId: "%s"
-				itemId: "%s"
-				fieldId: "%s"
-				value: { 
-				number: %d        
-				}
-				}
-				) {
-				projectV2Item {
-					id
-				 }
-				}
 
-		', $counter, $project_id, $issue_id, $field_id, $new_value);
-	}
-	$query = ['query' => sprintf('mutation {%s } ',$updates)];
-	$response = gh_graphql_query($query);
+if( ! function_exists('update_estimate_values') ) {
+	function update_estimate_values( $project_id, $field_id, $new_values ) {
+		$counter = 0;
+		$updates = '';
+		foreach( $new_values as $issue_id => $new_value )
+		{
+			$counter++;
+			$updates .= sprintf('
+			update%s: updateProjectV2ItemFieldValue(
+						input: {
+							projectId: "%s"
+					itemId: "%s"
+					fieldId: "%s"
+					value: { 
+					number: %d        
+					}
+					}
+					) {
+					projectV2Item {
+						id
+					 }
+					}
 
-	if( ! isset( $response->data)) {
-		abort(400);
+			', $counter, $project_id, $issue_id, $field_id, $new_value);
+		}
+		$query = ['query' => sprintf('mutation {%s } ',$updates)];
+		$response = gh_graphql_query($query);
+
+		if( ! isset( $response->data)) {
+			abort(400);
+		}
 	}
 }
-
 /** Auth Routes */
 Route::get('/auth/github', [GithubController::class, 'redirect'])->name('github.login');
 Route::get('/auth/github/callback', [GithubController::class, 'callback']);
@@ -92,6 +94,7 @@ Route::middleware('auth')->group(function () {
 /**
  * Functions
  */
+if( ! function_exists('gh_query') ) {
 function gh_query( $url, $body, $headers= []) {
 	$token = Crypt::decryptString(Auth::user()->gh_token);
 
@@ -106,7 +109,9 @@ function gh_query( $url, $body, $headers= []) {
 
 	return json_decode($response);
 }
+}
 
+if( ! function_exists('get_project_number_fields') ) {
 function get_project_number_fields(){
 		$name = Auth::user()->nickname;
 
@@ -198,7 +203,9 @@ function get_project_number_fields(){
 		}
 		return $fields;
 }
+}
 
+if( ! function_exists('get_projects') ) {
 function get_projects(){
 		$name = Auth::user()->nickname;
 
@@ -226,12 +233,16 @@ function get_projects(){
 		
 		return  $response->data->user->projectsV2->nodes;
 }
+}
 
+if( ! function_exists('gh_graphql_query') ) {
 function gh_graphql_query($query){
 	return gh_query('https://api.github.com/graphql', $query );
 }
+}
 
 
+if( ! function_exists('get_project_issues') ) {
 function get_project_issues($id){
 
 	/**
@@ -354,6 +365,7 @@ value_iteration: title
 	}
 
 	return $simplified_issues;
+}
 }
 
 /**
