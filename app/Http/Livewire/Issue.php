@@ -8,6 +8,7 @@ use Livewire\Component;
 class Issue extends Component
 {
 	public $issue;
+	public $votes;
 
     public function render()
     {

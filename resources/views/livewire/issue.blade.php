@@ -7,17 +7,17 @@
 	 </div>
 	 <div class="flex-1 min-w-0">
 		<p class="text-sm font-medium text-gray-900 truncate dark:text-white">
-			{{ $issue["title"] }}
+			{{ $issue['github_issue_title'] }}
 		</p>
 		<p class="text-sm text-gray-500 truncate dark:text-gray-400">
-		Current Estimate {{ $issue["fields"]["estimate"]["value"] }}
-		Field ID:  {{ $issue["fields"]["estimate"]["id"] }}
+		Current Estimate {{ $issue['github_issue_estimate'] }}
 		</p>
 	 </div>
   </div>
         <div>
-            <x-input-label for="estimate_{{ $issue["id"] }}" :value="__('New Estimate:')" />
-            <input id="estimate_{{ $issue["id"] }}" name="estimate[{{ $issue["id"]}}]" type="text" class="mt-1 block w-3" />
-            <x-input-error :messages="$errors->updatePassword->get('current_password')" class="mt-2" />
+			 @foreach( [1,2,3,5,8,13,21] as $option )
+				<input @checked($votes[$issue['id']]['estimate']==$option) type="radio" id="{{$issue['id']}}-estimate-{{$option}}" name="estimate[{{$issue['id']}}]" value="{{$option}}">
+				<label for="{{$issue['id']}}-estimate-{{$option}}">{{$option}}</label>
+			@endforeach
         </div>
 </li>
