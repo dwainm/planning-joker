@@ -35,7 +35,8 @@ Route::get('/dashboard', function () {
 Route::resource('sessions',SessionController::class)->middleware(['auth', 'verified']);
 Route::post('sessions/{id}/votes','App\Http\Controllers\SessionController@saveVotes')->middleware(['auth', 'verified'])->name('sessions-votes');
 
-Route::post('/project/{id}', function ($id){
+Route::get('/projects/{id}','App\Http\Controllers\GithubProjectsController@showProject')->middleware(['auth', 'verified'])->name('show-projects');
+Route::post('/projects/{id}', function ($id){
 	$field_id = "PVTF_lAHOABolQs2J4s4CTh_w"; // temporary harcoded untill settings is implemented where w
 	GithubProjectsController::update_estimate_values($id,$field_id, $_POST['estimate']??[]);
 	return redirect('/project/'. $id );
