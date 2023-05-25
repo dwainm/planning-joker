@@ -207,10 +207,10 @@ public static function get_project_number_fields(){
 		if( ! isset( $response->data->user->projectsV2->nodes)) {
 			return [];
 		}
-		
+
 		$projects =  $response->data->user->projectsV2->nodes;
 		$fields = [];
-		
+
 		foreach ($projects as $project) {
 				$query = ['query' =>'
 				query apiGetAllFields($project_id: ID!) {

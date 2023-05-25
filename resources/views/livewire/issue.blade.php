@@ -16,7 +16,8 @@
   </div>
         <div>
 			 @foreach( [1,2,3,5,8,13,21] as $option )
-				<input @checked($votes[$issue['id']]['estimate']==$option) type="radio" id="{{$issue['id']}}-estimate-{{$option}}" name="estimate[{{$issue['id']}}]" value="{{$option}}">
+                {{ $issue_vote = $votes[$issue['id']]['estimate']??''}}
+				<input @checked($issue_vote==$option) type="radio" id="{{$issue['id']}}-estimate-{{$option}}" name="estimate[{{$issue['id']}}]" value="{{$option}}">
 				<label for="{{$issue['id']}}-estimate-{{$option}}">{{$option}}</label>
 			@endforeach
         </div>

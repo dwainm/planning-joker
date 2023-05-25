@@ -14,10 +14,10 @@ class GithubController extends Controller
     public  function redirect()
 	{
 		return Socialite::driver('github')
-		->scopes(['project'])
+		->scopes(['project','repo'])
 		->redirect();
 	}
-	
+
 	public function callback()
 	{
 		$githubUser = Socialite::driver('github')->stateless()->user();
