@@ -8,6 +8,12 @@ use Illuminate\Support\Facades\Auth;
 
 class GithubProjectsController extends Controller
 {
+    public function showProject($id){
+        echo 'Hi, check ray for project details';
+        $issues = $this->get_project_issues($id);
+        ray($issues);
+        ray()->showApp();
+    }
 	/**
 	 * @return array
 	 */
@@ -60,7 +66,10 @@ public static function query( $url, $body, $headers= []) {
 	return json_decode($response);
 }
 
-public static function get_project_issues($id){
+/**
+ * @param $id Github project ID.
+ */
+public static function get_project_issues($id):array{
 
 	/**
 	 * All custom fields are build on common field types.
@@ -72,67 +81,83 @@ public static function get_project_issues($id){
 	 */
 	$query = [
 		'query' => 'query apiGetProjectIssues($project_id: ID!) {
-			node(id: $project_id) {
-				... on ProjectV2 {
-					items(first: 100) {
-						nodes {
-							id
-								fieldValues(first: 100) {
-									nodes {
-
-										... on ProjectV2ItemFieldTextValue {
-issue_title: text
-				 field{
-					 ... on ProjectV2FieldCommon {
-						 id
-						 name
-					 }
-				 }
-										}
-										... on ProjectV2ItemFieldDateValue {
-value_date: date
-				field{
-					... on ProjectV2FieldCommon {
-						id
-						name
-					}
-				}
-										}
-										... on ProjectV2ItemFieldSingleSelectValue{
-value_name: name
-				field{
-					... on ProjectV2FieldCommon {
-						id
-						name
-					}
-				}
-										}
-										... on ProjectV2ItemFieldNumberValue{
-value_number: number
-				  field{
-					  ... on ProjectV2FieldCommon {
-						  id
-						  name
-					  }
-				  }
-										}
-
-										... on ProjectV2ItemFieldIterationValue {
-value_iteration: title
-					 field{
-						 ... on ProjectV2FieldCommon {
-							 id
-							 name
-						 }
-					 }
-										}
-									}   
-								}
-						}
-					}
-				}
-			}
-		}	',
+    node(id: $project_id) {
+        ... on ProjectV2 {
+            items(first: 100) {
+                nodes {
+                    id
+                    fieldValues(first: 100) {
+                        nodes {
+                            ... on ProjectV2ItemFieldTextValue {
+                                issue_title: text
+                                field {
+                                    ... on ProjectV2FieldCommon {
+                                        id
+                                        name
+                                    }
+                                }
+                            }
+                            ... on ProjectV2ItemFieldLabelValue {
+                                labels {
+                                    nodes {
+                                        color
+                                        description
+                                        id
+                                        name
+                                        url
+                                    }
+                                }
+                            }
+                            ... on ProjectV2ItemFieldDateValue {
+                                value_date: date
+                                field {
+                                    ... on ProjectV2FieldCommon {
+                                        id
+                                        name
+                                    }
+                                }
+                            }
+                            ... on ProjectV2ItemFieldSingleSelectValue {
+                                value_name: name
+                                field {
+                                    ... on ProjectV2FieldCommon {
+                                        id
+                                        name
+                                    }
+                                }
+                            }
+                            ... on ProjectV2ItemFieldNumberValue {
+                                value_number: number
+                                field {
+                                    ... on ProjectV2FieldCommon {
+                                        id
+                                        name
+                                    }
+                                }
+                            }
+                            ... on ProjectV2ItemFieldIterationValue {
+                                value_iteration: title
+                                field {
+                                    ... on ProjectV2FieldCommon {
+                                        id
+                                        name
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    content {
+                        ... on Issue {
+                            bodyMarkdown: body
+                            bodyHTML
+                            bodyPlainText: bodyText
+                        }
+                    }
+                }
+            }
+        }
+    }
+}',
 		'variables' => [
 			'project_id' => $id,
 		]
@@ -146,6 +171,11 @@ value_iteration: title
 	$issue_title = '';
 	foreach ($issues as $issue) {
 		$issue_id = $issue->id;
+        $issue_description = '';
+        if( property_exists( $issue, 'content') && ! empty( $issue->content->bodyHTML) ){
+            $issue_description = $issue->content->bodyHTML;
+        }
+
 		// Supply defaults as we expect to have on template.
 		$fields = [
 			"estimate" => ["value"=>0, "id"=>"n/a"],
@@ -177,13 +207,17 @@ value_iteration: title
 		$simplified_issues[] = [
 			"id" => $issue_id,
 			"title" => $issue_title,
+            "description" => $issue_description,
 			"fields"=> $fields,
 		];
 	}
 
 	return $simplified_issues;
 }
-public static function get_project_number_fields(){
+/**
+ * @return array
+ */
+public static function get_project_number_fields(): array{
 		$name = Auth::user()->nickname;
 
 		$query = [
@@ -267,9 +301,9 @@ public static function get_project_number_fields(){
 				}
 
 				$fields[$project->id] = [];
-				$fields[$project->id]['project_title'] =  $project->title;	
-				$fields[$project->id]['id'] =  $field->id;	
-				$fields[$project->id]['name'] =  $field->name;	
+				$fields[$project->id]['project_title'] =  $project->title;
+				$fields[$project->id]['id'] =  $field->id;
+				$fields[$project->id]['name'] =  $field->name;
 			}
 		}
 		return $fields;
@@ -287,8 +321,8 @@ public static function get_project_number_fields(){
 							projectId: "%s"
 					itemId: "%s"
 					fieldId: "%s"
-					value: { 
-					number: %d        
+					value: {
+					number: %d
 					}
 					}
 					) {

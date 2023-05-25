@@ -27,7 +27,7 @@ class SessionController extends Controller
      */
     public function create()
     {
-		
+
         //
     }
 
@@ -38,13 +38,13 @@ class SessionController extends Controller
     {
 	   $project_id = $request->input('github-project-id-select');
 	   $issues = GithubProjectsController::get_project_issues($project_id);
-	   
+
 	   if (empty( $issues ) ) {
 		   abort( '403', __( "This project contains no issues. We can not start a session for it." ) );
 	   }
 
-	   // Not thes will need to be moved to the profile or project settings 
-	   // when whe have that, for no this is a quick and dirty way to get the project estimate 
+	   // Not thes will need to be moved to the profile or project settings
+	   // when whe have that, for no this is a quick and dirty way to get the project estimate
 	   // field in order for us to save the vote results.
 	   // Get the first on as all estimate field ides for this project will be the same.
 	   $estimate_field_id = $issues[0]['fields']['estimate']['id'];
@@ -56,12 +56,12 @@ class SessionController extends Controller
 	   $session->github_estimate_field_id = $estimate_field_id;
 	   $session->save();
 
-	   foreach( $issues as $issue ) { 
+	   foreach( $issues as $issue ) {
 		   $sessionIssue = new VotingSessionIssue();
 		   $sessionIssue->voting_session_id = $session->id;
 		   $sessionIssue->github_issue_id = $issue['id'];
 		   $sessionIssue->github_issue_title = $issue['title'];
-		   $sessionIssue->github_issue_description = "";
+		   $sessionIssue->github_issue_description = $issue['description'];
 		   $sessionIssue->is_active = true;
 		   $sessionIssue->github_issue_estimate = $issue['fields']['estimate']['value'];
 		   $sessionIssue->save();
@@ -77,6 +77,7 @@ class SessionController extends Controller
     {
 		$VotingSession = VotingSession::findOrFail($VotingSessionId);
 		$issues = VotingSessionIssue::all()->where('voting_session_id',$VotingSession->id);
+        ray($issues)->green()->showApp();
 		$votes  = votingSessionVote::where(['session_id'=>$VotingSessionId, 'user_id'=> request()->user()->id])->get()->toArray();
 		$issue_votes = [];
 		foreach( $votes as $vote ){
