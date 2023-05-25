@@ -11,7 +11,10 @@
 		</p>
 		<p class="text-sm text-gray-500 truncate dark:text-gray-400">
 		Current Estimate {{ $issue['github_issue_estimate'] }}
-        Description: {{!! $issue['github_issue_description'] !!}}
+        @if ( ! empty( $issue['github_url'] ) )
+            | <a target="_blank" href="{{$issue['github_url']}}">Link</a> |
+        @endif
+        Description: {!! $issue['github_issue_description'] !!}
 		</p>
 	 </div>
   </div>

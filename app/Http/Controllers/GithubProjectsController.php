@@ -10,8 +10,8 @@ class GithubProjectsController extends Controller
 {
     public function showProject($id){
         echo 'Hi, check ray for project details';
-        $issues = $this->get_project_issues($id);
-        ray($issues);
+        ray($this->get_raw_project_issues($id))->label("raw");
+        ray($this->get_project_issues($id))->label("Cleaned UP");
         ray()->showApp();
     }
 	/**
@@ -66,11 +66,11 @@ public static function query( $url, $body, $headers= []) {
 	return json_decode($response);
 }
 
+
 /**
  * @param $id Github project ID.
  */
-public static function get_project_issues($id):array{
-
+public static function get_raw_project_issues($id):array{
 	/**
 	 * All custom fields are build on common field types.
 	 *
@@ -148,6 +148,7 @@ public static function get_project_issues($id):array{
                     }
                     content {
                         ... on Issue {
+                            url
                             bodyMarkdown: body
                             bodyHTML
                             bodyPlainText: bodyText
@@ -163,8 +164,16 @@ public static function get_project_issues($id):array{
 		]
 			];
 	$response = self::graphql_query($query);
-	$issues = $response->data->node->items->nodes;
+	return $response->data->node->items->nodes;
 
+}
+
+/**
+ * @param $id Github project ID.
+ */
+public static function get_project_issues($id):array{
+
+    $issues= self::get_raw_project_issues($id);
 	// We need to convert the data into something that's easier to work with
 	$simplified_issues = [];
 
@@ -174,6 +183,11 @@ public static function get_project_issues($id):array{
         $issue_description = '';
         if( property_exists( $issue, 'content') && ! empty( $issue->content->bodyHTML) ){
             $issue_description = $issue->content->bodyHTML;
+        }
+
+        $issue_url = '';
+        if( property_exists( $issue, 'content') && ! empty( $issue->content->url) ){
+            $issue_url = $issue->content->url;
         }
 
 		// Supply defaults as we expect to have on template.
@@ -205,10 +219,11 @@ public static function get_project_issues($id):array{
 		}
 
 		$simplified_issues[] = [
-			"id" => $issue_id,
-			"title" => $issue_title,
+			"id"          => $issue_id,
+			"title"       => $issue_title,
+            "url"         => $issue_url,
             "description" => $issue_description,
-			"fields"=> $fields,
+			"fields"      => $fields,
 		];
 	}
 
