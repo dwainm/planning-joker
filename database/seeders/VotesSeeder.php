@@ -7,6 +7,7 @@ use App\Models\VotingSessionIssue;
 use App\Models\VotingSession;
 use Illuminate\Support\Str;
 use App\Models\User;
+use Illuminate\Console\View\Components\Warn;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -18,23 +19,45 @@ class VotesSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('voting_session_votes')->insert($this->vote());
+        foreach( $this->sessionVotes() as $vote ){
+            DB::table('voting_session_votes')->insert($vote);
+        }
     }
 
     /**
      * Generate a user for the seeder
      */
-    public function vote():array
+    public function sessionVotes():array
+    {
+        $user_id    = $this->uid();
+        $session_id = $this->sesid();
+
+        $session_issues = VotingSessionIssue::where(['voting_session_id'=> $session_id])->get()->toArray();
+
+        $votes = [];
+        foreach( $session_issues as $issue){
+            $votes[] = $this->vote( $user_id, $session_id, $issue['id']);
+        }
+
+        return $votes;
+
+    }
+
+    /**
+     * Generate a user for the seeder
+     */
+    public function vote($uid, $sesid, $issueid):array
     {
         return [
-            'user_id'    => $this->uid(),
-            'session_id' => $this->sesid(),
-            'issue_id'   => $this->issueid(),
+            'user_id'    => $uid,
+            'session_id' => $sesid,
+            'issue_id'   => $issueid,
             'estimate'   => $this->est(),
             'created_at' => $this->now(),
             'updated_at' => $this->now(),
         ];
     }
+
 
     public function s():string
     {
@@ -44,11 +67,6 @@ class VotesSeeder extends Seeder
     public function sesid():string
     {
         return VotingSession::all()->random()->id;
-    }
-
-    public function issueid():string
-    {
-        return VotingSessionIssue::all()->random()->id;
     }
 
     public function uid():string
