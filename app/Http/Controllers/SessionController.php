@@ -122,12 +122,23 @@ class SessionController extends Controller
     public function showManage($VotingSessionId)
     {
 		$VotingSession = VotingSession::findOrFail($VotingSessionId);
+        if ( request()->user()->id != $VotingSession->creator_id ){
+            abort(404);
+        }
+
 		$issues = VotingSessionIssue::all()->where('voting_session_id',$VotingSession->id);
-		$votes  = votingSessionVote::where(['session_id'=>$VotingSessionId, 'user_id'=> request()->user()->id])->get()->toArray();
-		$issue_votes = [];
-		foreach( $votes as $vote ){
-			$issue_votes[$vote['issue_id']] = $vote;
-		}
+
+        $votes_linked_to_issues =[];
+        foreach( $issues as $issue ){
+            $issueId = $issue['id'];
+            $votes = votingSessionVote::where([
+                    'session_id'=>$VotingSessionId,
+                    'issue_id'=>$issue['id'],
+                    ]
+                    )->get()->toArray();
+
+            $votes_linked_to_issues[$issueId]= $votes;
+        }
 
         // setting status
         // If a date is null now() will be equal to the date so session still
@@ -152,14 +163,10 @@ class SessionController extends Controller
             'message'=> $status_message
         ];
 
-        if ( request()->user()->id != $VotingSession->creator_id ){
-            abort(404);
-        }
-
 		return view('manage-session', [
 				'VotingSession'=>$VotingSession,
 				'issues'=> $issues,
-				'votes'=> $issue_votes,
+				'votes'=> $votes_linked_to_issues,
                 'status'=> $status,
 				]);
     }
@@ -193,22 +200,28 @@ class SessionController extends Controller
     public function finaliseEstimates($sessionId)
     {
 		$VotingSession = VotingSession::findOrFail($sessionId);
+
+        abort_if( $VotingSession->creator_id != request()->user()->id, 403);
+
 		$submitted_votes = $_POST['estimate'];
 		$VotingSessionIssues = VotingSessionIssue::whereIn( 'id', array_keys( $submitted_votes ))->get();
 		$new_estimate_update = [];
 		foreach( $VotingSessionIssues as $issue ) {
-			if ( !isset ( $submitted_votes[$issue->id] ) ) {
-				continue;
-			}
-			$new_estimate_update[$issue->github_issue_id] = $submitted_votes[$issue->id];
+            $new_estimate_update[$issue->github_issue_id] = $submitted_votes[$issue->id];
+            $issue->github_issue_estimate = $submitted_votes[$issue->id];
+            $issue->save();
 		}
+
 		GithubProjectsController::update_estimate_values(
 			$VotingSession->github_project_id,
 			$VotingSession->github_estimate_field_id,
 			$new_estimate_update
 		);
 
-		request()->session()->flash('status', 'vote-submitted');
+        $VotingSession->finalized_date = Carbon::now()->toDateTimeString();
+        $VotingSession->save();
+
+		request()->session()->flash('status', 'session-finalized');
 		return back();
     }
 

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Session') }}
+            {{ $status['message'] }}
         </h2>
     </x-slot>
 
@@ -9,7 +9,8 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
-<form method="POST" action="/sessions/{{$VotingSession->id}}/votes">
+
+<form method="POST" action="/sessions/{{$VotingSession->id}}/finalize">
 	@csrf
 
 	@if (empty($issues))
@@ -18,7 +19,7 @@
 		</div>
 	@else
 
-		@if (session('status') === 'vote-submitted')
+		@if (session('status') === 'session-finalized')
             <div
 				x-data="{ show: true }"
 				x-show="show"
@@ -27,7 +28,7 @@
 				class="text-sm text-gray-600 dark:text-gray-400"
                 >
                 <br> <br>
-			        <p> {{ __('Vote Submitted') }} </p>
+			        <p> {{ __('Votes updated on Github projects.') }} </p>
                 <br>
             </div>
 		@endif
@@ -45,6 +46,7 @@
                         {{ $issue['github_issue_title'] }}
                     </p>
                     <p class="text-sm text-gray-500 truncate dark:text-gray-400">
+                    @php($issue_votes = $votes[$issue['id']]['estimate']??'')
                     Current Estimate {{ $issue['github_issue_estimate'] }}
                     @if ( ! empty( $issue['github_url'] ) )
                         | <a target="_blank" href="{{$issue['github_url']}}">Link</a> |
@@ -52,22 +54,54 @@
                     </p>
                  </div>
               </div>
+                    <ul>
+                        @php( $common_vote = 0 )
+                        @php( $previous = 0 )
+                        @foreach($votes[$issue['id']] as $vote)
+                            @if( $previous == $vote['estimate'])
+                                @php( $common_vote = $vote['estimate'])
+                            @else
+                                @php( $previous = $vote['estimate'])
+                                @php( $common_vote = 0)
+                            @endif
+                        @endforeach
+
+                        @if( $common_vote!=0 )
+                            😲 Unanimous!'
+                        @else
+                            @foreach($votes[$issue['id']] as $vote)
+                                 <li>{{ \App\Models\User::find($vote['user_id'])->name}}: {{$vote['estimate']}}</li>
+                            @endforeach
+                        @endif
+                    </ul>
                     <div>
                          @foreach( [1,2,3,5,8,13,21] as $option )
-                            @php($issue_vote = $votes[$issue['id']]['estimate']??'')
-                            <input @checked($issue_vote==$option) type="radio" id="{{$issue['id']}}-estimate-{{$option}}" name="estimate[{{$issue['id']}}]" value="{{$option}}">
+                            <input
+                            class="{{ $common_vote!=0 ? 'grayscale' : '' }}"
+                            @checked($common_vote==$option)
+                            type="radio"
+                            id="{{$issue['id']}}-estimate-{{$option}}"
+                            name="estimate[{{$issue['id']}}]" value="{{$option}}" />
+
                             <label for="{{$issue['id']}}-estimate-{{$option}}">{{$option}}</label>
                         @endforeach
                     </div>
             </li>
+            <br>
 			<hr class="w-ful h-1 mx-auto my-4 bg-gray-100 border-0 rounded md:my-10 dark:bg-gray-700">
+			<hr class="w-ful h-1 mx-auto my-4 bg-gray-100 border-0 rounded md:my-10 dark:bg-gray-700">
+            <br>
+			<hr class="w-ful h-1 mx-auto my-4 bg-gray-100 border-0 rounded md:my-10 dark:bg-gray-700">
+			<hr class="w-ful h-1 mx-auto my-4 bg-gray-100 border-0 rounded md:my-10 dark:bg-gray-700">
+			<hr class="w-ful h-1 mx-auto my-4 bg-gray-100 border-0 rounded md:my-10 dark:bg-gray-700">
+            <br>
 		@endforeach
 		</ul>
 	@endif
 	<div class="flex items-center gap-4">
-		<x-primary-button>{{ __('Save') }}</x-primary-button>
-		<x-primary-button>{{ __('Finalize') }}</x-primary-button>
         <a type="button" href="{{ route("sessions.show", $VotingSession->id) }}" type="button"> View Session </a>
+        <br>
+		<x-primary-button>{{ __('Finalize') }}</x-primary-button>
 	</div>
 </form>
                 </div>

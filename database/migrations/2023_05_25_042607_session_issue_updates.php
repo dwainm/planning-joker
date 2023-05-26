@@ -14,10 +14,6 @@ return new class extends Migration
         Schema::table('voting_session_issues', function (Blueprint $table) {
             $table->string('github_url')->nullable();
         });
-
-        Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('creator')->default(1)->constrained('users');
-        });
     }
 
     /**
