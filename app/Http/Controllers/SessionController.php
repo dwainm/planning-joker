@@ -85,10 +85,82 @@ class SessionController extends Controller
 			$issue_votes[$vote['issue_id']] = $vote;
 		}
 
-		return view('session', [
+        // setting status
+        // If a date is null now() will be equal to the date so session still
+        // be active.
+        $now = Carbon::now();
+        if ( $now > Carbon::parse( $VotingSession->end_date ) ) {
+            $is_closed = true;
+            $status_message = __('The session has expired and Voting is closed');
+        } elseif ( $now > Carbon::parse( $VotingSession->manually_closed ) ) {
+            $is_closed = true;
+            $status_message = __('The session was ended by the author.');
+        } elseif ( $now > Carbon::parse( $VotingSession->finalized_date ) ) {
+            $is_closed = true;
+            $status_message = __('The session has has already been finalized.');
+        } else {
+            $is_closed = false;
+            $status_message = __('Session is active');
+        }
+
+        $status = [
+            'is_closed'=>$is_closed,
+            'message'=> $status_message
+        ];
+
+		return view('view-session', [
 				'VotingSession'=>$VotingSession,
 				'issues'=> $issues,
 				'votes'=> $issue_votes,
+                'status'=> $status,
+				]);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function showManage($VotingSessionId)
+    {
+		$VotingSession = VotingSession::findOrFail($VotingSessionId);
+		$issues = VotingSessionIssue::all()->where('voting_session_id',$VotingSession->id);
+		$votes  = votingSessionVote::where(['session_id'=>$VotingSessionId, 'user_id'=> request()->user()->id])->get()->toArray();
+		$issue_votes = [];
+		foreach( $votes as $vote ){
+			$issue_votes[$vote['issue_id']] = $vote;
+		}
+
+        // setting status
+        // If a date is null now() will be equal to the date so session still
+        // be active.
+        $now = Carbon::now();
+        if ( $now > Carbon::parse( $VotingSession->end_date ) ) {
+            $is_closed = true;
+            $status_message = __('The session has expired and Voting is closed');
+        } elseif ( $now > Carbon::parse( $VotingSession->manually_closed ) ) {
+            $is_closed = true;
+            $status_message = __('The session was ended by the author.');
+        } elseif ( $now > Carbon::parse( $VotingSession->finalized_date ) ) {
+            $is_closed = true;
+            $status_message = __('The session has has already been finalized.');
+        } else {
+            $is_closed = false;
+            $status_message = __('Session is active');
+        }
+
+        $status = [
+            'is_closed'=>$is_closed,
+            'message'=> $status_message
+        ];
+
+        if ( request()->user()->id != $VotingSession->creator_id ){
+            abort(404);
+        }
+
+		return view('manage-session', [
+				'VotingSession'=>$VotingSession,
+				'issues'=> $issues,
+				'votes'=> $issue_votes,
+                'status'=> $status,
 				]);
     }
 
@@ -143,9 +215,9 @@ class SessionController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(VotingSession $VotingSession)
+    public function edit(int $id)
     {
-        //
+	   return redirect("sessions/$id/manage");
     }
 
     /**

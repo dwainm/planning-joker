@@ -34,6 +34,7 @@ Route::get('/dashboard', function () {
 
 Route::resource('sessions',SessionController::class)->middleware(['auth', 'verified']);
 Route::post('sessions/{id}/votes','App\Http\Controllers\SessionController@saveVotes')->middleware(['auth', 'verified'])->name('sessions-votes');
+Route::get('sessions/{id}/manage','App\Http\Controllers\SessionController@showManage')->middleware(['auth', 'verified'])->name('show-manage');
 
 Route::get('/projects/{id}','App\Http\Controllers\GithubProjectsController@showProject')->middleware(['auth', 'verified'])->name('show-projects');
 Route::post('/projects/{id}', function ($id){
