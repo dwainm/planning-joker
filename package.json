@@ -16,6 +16,7 @@
         "vite": "^4.0.0"
     },
     "dependencies": {
+        "@inertiajs/react": "^1.0.7",
         "@primer/css": "^21.0.1",
         "react": "^18.2.0",
         "react-dom": "^18.2.0"

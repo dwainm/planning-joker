@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SessionController;
 use App\Models\VotingSession;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,13 +23,11 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-	ray(VotingSession::all()->toArray());
-		return view('dashboard',
-				[
+        return Inertia::render('Show', [
 				'title'=>'Welcome',
 				'sessions'=> VotingSession::all()->toArray(),
 				'projects'=> GithubProjectsController::get_projects(),
-				]);
+        ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 
