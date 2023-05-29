@@ -18,7 +18,9 @@
     "dependencies": {
         "@inertiajs/react": "^1.0.7",
         "@primer/css": "^21.0.1",
+        "@primer/react": "^35.25.1",
         "react": "^18.2.0",
-        "react-dom": "^18.2.0"
+        "react-dom": "^18.2.0",
+        "styled-components": "^5.3.11"
     }
 }
