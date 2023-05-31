@@ -8,14 +8,16 @@ use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class GithubController extends Controller
 {
     public  function redirect()
 	{
-		return Socialite::driver('github')
+		$url = Socialite::driver('github')
 		->scopes(['project','repo'])
-		->redirect();
+		->redirect()->getTargetUrl();
+        return Inertia::location($url);
 	}
 
 	public function callback()
@@ -52,6 +54,6 @@ class GithubController extends Controller
 		ray( $user);
 
 		Auth::login($user);
-		return redirect('/dashboard');
+        return Inertia::render('Home', [ ]);
 	}
 }
