@@ -1,10 +1,9 @@
 import Layout from './Layout'
-import LoginForm from './LoginForm'
 import { router } from '@inertiajs/react'
 import {Button} from '@primer/react'
 import {MarkGithubIcon} from '@primer/octicons-react'
 
-export default function Login(...args) {
+export default function LoginForm(...args) {
     console.log('hi function');
 
     const handleSubmit = (e) => {

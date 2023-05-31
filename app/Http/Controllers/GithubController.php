@@ -54,6 +54,6 @@ class GithubController extends Controller
 		ray( $user);
 
 		Auth::login($user);
-        return Inertia::render('Home', [ ]);
+        return Inertia::render('Home');
 	}
 }

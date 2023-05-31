@@ -28,16 +28,20 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 */
 
 Route::get('/', function () {
-		return redirect('/dashboard');
+    if (Auth::check()) {
+        return redirect('home');
+    } else {
+        return redirect('login');
+    }
 });
 
-Route::get('/dashboard', function () {
-        return Inertia::render('Show', [
-				'title'=>'Welcome',
-				'sessions'=> VotingSession::all()->toArray(),
-				'projects'=> GithubProjectsController::get_projects(),
-        ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/home', function () {
+    return Inertia::render('Home', [
+        'title'=>'Welcome',
+        'sessions'=> VotingSession::all()->toArray(),
+        'projects'=> GithubProjectsController::get_projects(),
+    ]);
+})->middleware(['auth', 'verified'])->name('home');
 
 
 Route::resource('sessions',SessionController::class)->middleware(['auth', 'verified']);
