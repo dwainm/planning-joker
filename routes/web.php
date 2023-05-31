@@ -28,16 +28,11 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 */
 
 Route::get('/', function () {
-    if (Auth::check()) {
-        return redirect('home');
-    } else {
+    if (! Auth::check()) {
         return redirect('login');
     }
-});
 
-Route::get('/home', function () {
-    return Inertia::render('Home', [
-        'title'=>'Welcome',
+    return Inertia::render('Index', [
         'sessions'=> VotingSession::all()->toArray(),
         'projects'=> GithubProjectsController::get_projects(),
     ]);

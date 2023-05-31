@@ -8,6 +8,7 @@ use App\Models\VotingSessionIssue;
 use App\Models\votingSessionVote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Inertia\Inertia;
 
 use function Pest\Laravel\withoutEvents;
 
@@ -18,8 +19,7 @@ class SessionController extends Controller
      */
     public function index()
     {
-		echo "hi";
-        //
+		echo "Index function";
     }
 
     /**
@@ -27,8 +27,7 @@ class SessionController extends Controller
      */
     public function create()
     {
-
-        //
+        return Inertia::render('CreateSession', []);
     }
 
     /**
