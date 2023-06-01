@@ -36,7 +36,7 @@ Route::get('/', function () {
         'sessions'=> VotingSession::all()->toArray(),
         'projects'=> GithubProjectsController::get_projects(),
     ]);
-})->middleware(['auth', 'verified'])->name('home');
+})->middleware(['auth', 'verified'])->name('index');
 
 
 Route::resource('sessions',SessionController::class)->middleware(['auth', 'verified']);

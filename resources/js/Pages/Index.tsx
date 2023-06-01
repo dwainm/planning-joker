@@ -2,7 +2,7 @@ import Layout from './Layout'
 import LoginForm from './LoginForm'
 import { Head, Link } from '@inertiajs/react'
 
-export default function Home({sessions, projects}) {
+export default function Index({sessions, projects}) {
 
     const sessionList = sessions.map( (session) => {
         const id = session.id;
@@ -33,4 +33,3 @@ export default function Home({sessions, projects}) {
     </Layout>
   )
 }
-
