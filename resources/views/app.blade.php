@@ -15,6 +15,7 @@
         @viteReactRefresh
         @vite(['resources/js/app.tsx','resources/scss/app.scss'])
         @inertiaHead
+        @routes
     </head>
     <body class="font-sans antialiased">
         @inertia
