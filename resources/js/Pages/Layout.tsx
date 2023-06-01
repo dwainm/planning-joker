@@ -2,13 +2,12 @@ import { Link, usePage} from '@inertiajs/react';
 import {ActionList, ActionMenu} from '@primer/react'
 
 export default function Layout({ children }) {
-    const isLoggedIn = usePage().props.user !==null;
-
-    const LogOutButton = () =>{
+    const LogOutButton = ({user}) =>{
+        const isLoggedIn = user !==null;
         if( isLoggedIn) {
             return (
                     <Link
-                        className='Header-link'
+                        className='btn-link Header-link'
                         method='post'
                         as='button'
                         href={route('logout')}>
@@ -36,7 +35,7 @@ export default function Layout({ children }) {
                 </div>
 
                 <div className="Header-item Header-item--full">
-                    <LogOutButton />
+                    <LogOutButton user={usePage().props.user} />
                 </div>
                 <ActionMenu>
                     <ActionMenu.Button>Profile</ActionMenu.Button>
