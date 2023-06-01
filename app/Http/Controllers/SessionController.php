@@ -27,7 +27,9 @@ class SessionController extends Controller
      */
     public function create()
     {
-        return Inertia::render('CreateSession', []);
+        return Inertia::render('CreateSession', [
+                'projects'=> GithubProjectsController::get_projects(),
+        ]);
     }
 
     /**

@@ -2,6 +2,7 @@ import { Link, usePage} from '@inertiajs/react';
 import {ActionList, ActionMenu} from '@primer/react'
 
 export default function Layout({ children }) {
+     const { flash } = usePage().props;
     const LogOutButton = ({user}) =>{
         const isLoggedIn = user !==null;
         if( isLoggedIn) {
@@ -62,6 +63,9 @@ export default function Layout({ children }) {
                     </ActionMenu.Overlay>
                 </ActionMenu>
             </header>
+            {flash.message && (
+              <div class="alert">{flash.message}</div>
+             )}
             <article>{children}</article>
         </main>
     )
