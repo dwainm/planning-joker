@@ -1,4 +1,5 @@
-import { Link,router } from '@inertiajs/react'
+import { Link } from '@inertiajs/react';
+import {ActionList, ActionMenu} from '@primer/react'
 
 export default function Layout({ children }) {
   return (
@@ -17,6 +18,40 @@ export default function Layout({ children }) {
                 <div className="Header-item Header-item--full">
                     <Link className='Header-link' href="/"> Dashboard </Link>
                 </div>
+
+                <div className="Header-item Header-item--full">
+                    <Link
+                        className='Header-link'
+                        method='post'
+                        as='button'
+                        href={route('logout')}>
+                        Log out
+                    </Link>
+                </div>
+                <ActionMenu>
+                    <ActionMenu.Button>Profile</ActionMenu.Button>
+
+                    <ActionMenu.Overlay>
+                        <ActionList>
+                            <ActionList.Item>
+                                <div className="Header-item Header-item--full">
+                                    <Link className='Header-link' href="route('profile.edit') ">
+                                        Profile Edit
+                                    </Link>
+                                </div>
+                            </ActionList.Item>
+                            <ActionList.Item>
+                                <Link
+                                    className='Header-link'
+                                    method='post'
+                                    as='button'
+                                    href={route('logout')}>
+                                    Log out
+                                </Link>
+                            </ActionList.Item>
+                        </ActionList>
+                    </ActionMenu.Overlay>
+                </ActionMenu>
             </header>
             <article>{children}</article>
         </main>
