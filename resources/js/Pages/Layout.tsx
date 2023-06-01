@@ -1,8 +1,24 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage} from '@inertiajs/react';
 import {ActionList, ActionMenu} from '@primer/react'
 
 export default function Layout({ children }) {
-  return (
+    const isLoggedIn = usePage().props.user !==null;
+
+    const LogOutButton = () =>{
+        if( isLoggedIn) {
+            return (
+                    <Link
+                        className='Header-link'
+                        method='post'
+                        as='button'
+                        href={route('logout')}>
+                        Log out
+                    </Link>
+            );
+        }
+    }
+
+    return (
         <main>
             <header className='Header js-details-container Details px-3 px-md-4 px-lg-5 flex-wrap flex-md-nowrap'>
                 <div className="Header-item mt-n1 mb-n1  d-none d-md-flex">
@@ -20,13 +36,7 @@ export default function Layout({ children }) {
                 </div>
 
                 <div className="Header-item Header-item--full">
-                    <Link
-                        className='Header-link'
-                        method='post'
-                        as='button'
-                        href={route('logout')}>
-                        Log out
-                    </Link>
+                    <LogOutButton />
                 </div>
                 <ActionMenu>
                     <ActionMenu.Button>Profile</ActionMenu.Button>
@@ -55,5 +65,5 @@ export default function Layout({ children }) {
             </header>
             <article>{children}</article>
         </main>
-  )
+    )
 }
