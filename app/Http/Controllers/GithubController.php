@@ -23,14 +23,23 @@ class GithubController extends Controller
 	public function callback()
 	{
 		$githubUser = Socialite::driver('github')->stateless()->user();
+        $user = $this->regesiterOrGetUser( $githubUser);
 
-		ray( $githubUser );
+		Auth::login($user);
 
-		// Find or craet user
+        return to_route('index');
+	}
+
+    /**
+     * For a given github user register or fin existing user
+     * @param $githubUser
+     *
+     * @return \App\Models\User $user
+     */
+    private function regesiterOrGetUser( $githubUser ){
 		$user = User::where('github_id','=',$githubUser->id)->first();
 		if ( empty( $user ) )
 		{
-
 			$hashed_random_password = Hash::make(Str::random(8));
 
 			$data = [
@@ -51,9 +60,7 @@ class GithubController extends Controller
 				'gh_token' => Crypt::encryptString($githubUser->token)
 			]);
 		}
-		ray( $user);
 
-		Auth::login($user);
-        return Inertia::render('Home');
-	}
+        return $user;
+    }
 }
