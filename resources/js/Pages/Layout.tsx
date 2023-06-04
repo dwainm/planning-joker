@@ -66,7 +66,7 @@ export default function Layout({ children }) {
             {flash.message && (
               <div class="alert">{flash.message}</div>
              )}
-            <article>{children}</article>
+            <article className='pt-5 px-5'>{children}</article>
         </main>
     )
 }
